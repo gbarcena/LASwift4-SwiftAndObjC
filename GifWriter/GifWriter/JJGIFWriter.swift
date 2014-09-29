@@ -20,7 +20,7 @@ import ImageIO
 class JJGIFWriter : NSObject {
     
     var delegate : JJGIFWriterDelegate?
-    var progress : Float
+    dynamic var progress : Float
     var destination : CGImageDestinationRef!
     var images: [UIImage]
     

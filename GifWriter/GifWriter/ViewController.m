@@ -43,7 +43,7 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
     self.gifWriter.delegate = self;
     
     [self addObserver:self
-           forKeyPath:@"progress"
+           forKeyPath:@"gifWriter.progress"
               options:NSKeyValueObservingOptionNew
               context:XXContext];
 }
@@ -118,7 +118,7 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
                        context:(void *)context
 {
     if (context == XXContext) {
-        if ([keyPath isEqualToString:@"progress"]) {
+        if ([keyPath isEqualToString:@"gifWriter.progress"]) {
             self.progressView.progress = self.gifWriter.progress;
         }
     }
