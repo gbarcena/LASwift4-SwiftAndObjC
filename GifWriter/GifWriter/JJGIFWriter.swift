@@ -13,8 +13,9 @@ import ImageIO
 @objc protocol JJGIFWriterDelegate {
     func didStartWritingGIF(writer: JJGIFWriter)
     func didEndWritingGIF(writer: JJGIFWriter)
-    optional
-    func didWriteImage(writer: JJGIFWriter, frameIndex: Int)
+    
+    @objc(didWriteImageWithWriter:atFrameIndex:)
+    optional func didWriteImage(writer: JJGIFWriter, atFrameIndex frameIndex: Int)
 }
 
 class JJGIFWriter : NSObject {
@@ -47,7 +48,7 @@ class JJGIFWriter : NSObject {
             writeImage(image.CGImage, frameDelay: 0.25);
             dispatch_async(dispatch_get_main_queue()) {
                 self.progress = Float(index)/Float(frameCount)
-                self.delegate?.didWriteImage?(self, frameIndex: index)
+                self.delegate?.didWriteImage?(self, atFrameIndex: index)
             }
         }
         endWrite();
