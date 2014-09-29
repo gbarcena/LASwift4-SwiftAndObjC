@@ -1,6 +1,6 @@
 //
 //  JJGIFWriter.swift
-//  
+//
 //
 //  Created by Gustavo Barcena on 9/9/14.
 //
@@ -25,18 +25,15 @@ class JJGIFWriter : NSObject {
     var destination : CGImageDestinationRef!
     var images: [UIImage]
     
-    init(images:[UIImage], destinationURL:NSURL)
+    init(images:[UIImage])
     {
         self.images = images;
         progress = 0
-        super.init()
-        var fileProperties = self.gifProperties()
-        self.destination = CGImageDestinationCreateWithURL(destinationURL, kUTTypeGIF, UInt(self.images.count), nil)
-        CGImageDestinationSetProperties(self.destination, fileProperties)
     }
     
-    func makeGIF()
+    func makeGIF(destinationURL:NSURL)
     {
+        beginWrite(destinationURL)
         var frameCount = self.images.count
         dispatch_async(dispatch_get_main_queue()) {
             self.progress = 0
@@ -58,6 +55,12 @@ class JJGIFWriter : NSObject {
         }
     }
     
+    private func beginWrite(destinationURL:NSURL)
+    {
+        var fileProperties = self.gifProperties()
+        self.destination = CGImageDestinationCreateWithURL(destinationURL, kUTTypeGIF, UInt(self.images.count), nil)
+        CGImageDestinationSetProperties(self.destination, fileProperties)
+    }
     private func writeImage(image:CGImage, frameDelay : NSTimeInterval)
     {
         var frameProperties = self.frameProperties(frameDelay);

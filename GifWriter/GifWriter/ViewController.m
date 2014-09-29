@@ -38,8 +38,7 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
         [self.images addObject:[UIImage imageNamed:imageName]];
     }
     
-    self.gifWriter = [[JJGIFWriter alloc] initWithImages:self.images
-                                          destinationURL:[self fileLocation]];
+    self.gifWriter = [[JJGIFWriter alloc] initWithImages:self.images];
     self.gifWriter.delegate = self;
     
     [self addObserver:self
@@ -73,7 +72,7 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
 -(IBAction)makeGIFPressed:(id)sender
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-        [self.gifWriter makeGIF];
+        [self.gifWriter makeGIF:[self fileLocation]];
         self.imageView.image = [YLGIFImage imageWithContentsOfFile:[self filePath]];
     });
 }
