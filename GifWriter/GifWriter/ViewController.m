@@ -13,6 +13,7 @@
 #import "ViewController.h"
 #import "YLGIFImage.h"
 #import "YLImageView.h"
+#import "GifWriter-Swift.h"
 
 static void * XXContext = &XXContext;
 NSInteger const ViewControllerCellImageViewTag = 1000;

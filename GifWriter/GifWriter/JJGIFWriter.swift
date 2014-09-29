@@ -10,12 +10,12 @@ import UIKit
 import MobileCoreServices
 import ImageIO
 
-protocol JJGIFWriterDelegate {
+@objc protocol JJGIFWriterDelegate {
     func didStartWritingGIF(writer: JJGIFWriter)
     func didEndWritingGIF(writer: JJGIFWriter)
 }
 
-class JJGIFWriter {
+@objc class JJGIFWriter {
     
     var delegate : JJGIFWriterDelegate?
     var progress : Float
