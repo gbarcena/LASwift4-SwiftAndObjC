@@ -13,9 +13,11 @@ import ImageIO
 @objc protocol JJGIFWriterDelegate {
     func didStartWritingGIF(writer: JJGIFWriter)
     func didEndWritingGIF(writer: JJGIFWriter)
+    optional
+    func didWriteImage(writer: JJGIFWriter, frameIndex: Int)
 }
 
-@objc class JJGIFWriter {
+class JJGIFWriter : NSObject {
     
     var delegate : JJGIFWriterDelegate?
     var progress : Float
@@ -25,7 +27,8 @@ import ImageIO
     init(images:[UIImage], destinationURL:NSURL)
     {
         self.images = images;
-        progress = 0;
+        progress = 0
+        super.init()
         var fileProperties = self.gifProperties()
         self.destination = CGImageDestinationCreateWithURL(destinationURL, kUTTypeGIF, UInt(self.images.count), nil)
         CGImageDestinationSetProperties(self.destination, fileProperties)
@@ -40,11 +43,12 @@ import ImageIO
         }
         for (index, image) in enumerate(images)
         {
-            dispatch_async(dispatch_get_main_queue()) {
-                self.progress = Float(index)/Float(frameCount)
-            }
             NSThread.sleepForTimeInterval(0.25)
             writeImage(image.CGImage, frameDelay: 0.25);
+            dispatch_async(dispatch_get_main_queue()) {
+                self.progress = Float(index)/Float(frameCount)
+                self.delegate?.didWriteImage?(self, frameIndex: index)
+            }
         }
         endWrite();
         dispatch_async(dispatch_get_main_queue()) {

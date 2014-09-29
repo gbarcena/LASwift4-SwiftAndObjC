@@ -18,13 +18,12 @@
 static void * XXContext = &XXContext;
 NSInteger const ViewControllerCellImageViewTag = 1000;
 
-@interface ViewController ()  <UICollectionViewDataSource, UICollectionViewDelegate, MFMailComposeViewControllerDelegate>
+@interface ViewController ()  <UICollectionViewDataSource, UICollectionViewDelegate, MFMailComposeViewControllerDelegate, JJGIFWriterDelegate>
 @property (weak, nonatomic) IBOutlet YLImageView *imageView;
 @property (weak, nonatomic) IBOutlet UIProgressView *progressView;
 @property (weak, nonatomic) IBOutlet UILabel *label;
 @property (strong, nonatomic) NSMutableArray *images;
-@property (nonatomic) CGImageDestinationRef destination;
-@property (nonatomic) float progress;
+@property (strong, nonatomic) JJGIFWriter *gifWriter;
 
 @end
 
@@ -38,6 +37,10 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
         NSString *imageName = [NSString stringWithFormat:@"ninenine_%d", i];
         [self.images addObject:[UIImage imageNamed:imageName]];
     }
+    
+    self.gifWriter = [[JJGIFWriter alloc] initWithImages:self.images
+                                          destinationURL:[self fileLocation]];
+    self.gifWriter.delegate = self;
     
     [self addObserver:self
            forKeyPath:@"progress"
@@ -70,59 +73,9 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
 -(IBAction)makeGIFPressed:(id)sender
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-        [self makeGIF];
+        [self.gifWriter makeGIF];
         self.imageView.image = [YLGIFImage imageWithContentsOfFile:[self filePath]];
     });
-}
-
-#pragma mark - GIF Generation
-
--(void)makeGIF
-{
-    NSInteger frameCount = self.images.count;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.label.text = @"Start Writing";
-    });
-    [self beginWrite:frameCount];
-    for ( int i = 0; i < frameCount; i++ ) {
-        UIImage *newImage = self.images[i];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.progress = (float)i/frameCount;
-        });
-        [NSThread sleepForTimeInterval:0.25];
-        [self writeImage:newImage];
-    }
-    [self endWrite];
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.progress = 1;
-        self.label.text = @"End Writing";
-    });
-}
-
-#pragma mark - GIF File properties
-
-// properties to be applied to each frame... such as setting delay time & color map.
-- (NSDictionary *)framePropertiesWithFrameDelay:(NSTimeInterval)delay {
-    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:5];
-    [dict setObject:@(delay) forKey:(NSString *)kCGImagePropertyGIFDelayTime];
-    
-    NSDictionary *frameProps = [ NSDictionary dictionaryWithObject: dict
-                                                            forKey: (NSString*) kCGImagePropertyGIFDictionary ];
-    
-    return frameProps;
-}
-
-// properties to apply to entire GIF... such as loop count (0 = infinite) and no global color map.
-- (NSDictionary *)gifProperties {
-    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:5];
-    
-    //[dict setObject:[NSNumber numberWithBool:NO] forKey:(NSString *)kCGImagePropertyGIFHasGlobalColorMap];
-    [dict setObject:[NSNumber numberWithInt:0] forKey:(NSString *)kCGImagePropertyGIFLoopCount];
-    
-    NSDictionary *gifProps = [ NSDictionary dictionaryWithObject: dict
-                                                          forKey: (NSString*) kCGImagePropertyGIFDictionary ];
-    
-    return gifProps;
 }
 
 #pragma mark - GIF File Location Methods
@@ -149,35 +102,6 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
     return fileURL;
 }
 
-#pragma mark - GIF writing Methods
-
--(void)beginWrite:(NSUInteger)frameCount
-{
-    NSUInteger kFrameCount = frameCount;
-    NSDictionary *fileProperties = [self gifProperties];
-    NSURL *fileURL = [self fileLocation];
-    
-    self.destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)fileURL, kUTTypeGIF, kFrameCount, NULL);
-    CGImageDestinationSetProperties(self.destination, (__bridge CFDictionaryRef)fileProperties);
-}
-
--(void)writeImage:(UIImage *)image
-{
-    NSTimeInterval frameDelay = .25;
-    NSDictionary *frameProperties = [self framePropertiesWithFrameDelay:frameDelay];
-    @autoreleasepool {
-        CGImageRef imageRef  = image.CGImage;
-        CGImageDestinationAddImage(self.destination, imageRef, (__bridge CFDictionaryRef)frameProperties);
-    }
-}
-
--(void)endWrite
-{
-    if (!CGImageDestinationFinalize(self.destination)) {
-        NSLog(@"failed to finalize image destination");
-    }
-    CFRelease(self.destination);
-}
 
 #pragma mark - MFMailComposeView Methods
 
@@ -195,9 +119,21 @@ NSInteger const ViewControllerCellImageViewTag = 1000;
 {
     if (context == XXContext) {
         if ([keyPath isEqualToString:@"progress"]) {
-            self.progressView.progress = self.progress;
+            self.progressView.progress = self.gifWriter.progress;
         }
     }
+}
+
+#pragma mark - JJGIFWriterDelegate Methods
+
+-(void)didStartWritingGIF:(JJGIFWriter *)writer
+{
+    self.label.text = @"Start Writing";
+}
+
+-(void)didEndWritingGIF:(JJGIFWriter *)writer
+{
+    self.label.text = @"End Writing";
 }
 
 @end
